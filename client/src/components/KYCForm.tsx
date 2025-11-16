@@ -20,6 +20,8 @@ const KYCForm: React.FC<KYCFormProps> = ({ onSuccess }) => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [submittedId, setSubmittedId] = useState("");
+  const [aiSummary, setAiSummary] = useState("");
+  const [generatingSummary, setGeneratingSummary] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -34,12 +36,20 @@ const KYCForm: React.FC<KYCFormProps> = ({ onSuccess }) => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setGeneratingSummary(true);
     setError("");
     setSuccess("");
     setSubmittedId("");
+    setAiSummary("");
 
     try {
       const response = await submitKYC(formData);
+      
+      // Set the AI summary from response
+      if (response.data.aiSummary) {
+        setAiSummary(response.data.aiSummary);
+      }
+      
       setSuccess(
         "KYC submitted successfully! Your application is under review."
       );
@@ -61,6 +71,7 @@ const KYCForm: React.FC<KYCFormProps> = ({ onSuccess }) => {
       );
     } finally {
       setLoading(false);
+      setGeneratingSummary(false);
     }
   };
 
@@ -73,6 +84,11 @@ const KYCForm: React.FC<KYCFormProps> = ({ onSuccess }) => {
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
+        {generatingSummary && (
+          <div className="alert alert-info">
+            <strong>⏳ Generating AI Summary...</strong> Your submission is being analyzed by AI...
+          </div>
+        )}
         {success && (
           <div className="alert alert-success">
             <strong>Success!</strong> {success}
@@ -80,6 +96,12 @@ const KYCForm: React.FC<KYCFormProps> = ({ onSuccess }) => {
               <p className="submission-id">
                 Your Application ID: <strong>{submittedId}</strong>
               </p>
+            )}
+            {aiSummary && (
+              <div className="ai-summary-section">
+                <strong>📝 AI-Generated Summary:</strong>
+                <p className="ai-summary-text">{aiSummary}</p>
+              </div>
             )}
           </div>
         )}
@@ -168,8 +190,8 @@ const KYCForm: React.FC<KYCFormProps> = ({ onSuccess }) => {
           </div>
 
           <div className="form-actions">
-            <button type="submit" disabled={loading} className="submit-btn">
-              {loading ? "Submitting..." : "Submit Application"}
+            <button type="submit" disabled={loading || generatingSummary} className="submit-btn">
+              {loading ? "Processing..." : generatingSummary ? "⏳ Generating Summary..." : "Submit Application"}
             </button>
           </div>
         </form>

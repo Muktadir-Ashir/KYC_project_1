@@ -1,10 +1,17 @@
 import { Request, Response } from 'express';
 import KYC from '../models/KYC';
+import { generateAISummary } from '../services/llmService';
 
 // Submit KYC application
 export const submitKYC = async (req: Request, res: Response) => {
   try {
     const kycData = new KYC(req.body);
+    
+    // Generate AI summary before saving
+    console.log('Generating AI summary for KYC submission...');
+    const aiSummary = await generateAISummary(kycData);
+    kycData.aiSummary = aiSummary;
+    
     await kycData.save();
     res.status(201).json({ 
       success: true, 

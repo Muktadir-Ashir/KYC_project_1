@@ -109,10 +109,38 @@ form {
   border: 1px solid #cfc;
 }
 
+.alert-info {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  border: 1px solid #90caf9;
+}
+
 .submission-id {
   margin-top: 0.5rem;
   font-size: 0.9rem;
   color: #2c5f2d;
+}
+
+.ai-summary-section {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
+  border-left: 4px solid #2c5f2d;
+}
+
+.ai-summary-section strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #2c5f2d;
+}
+
+.ai-summary-text {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #333;
+  font-style: italic;
 }
 
 .form-actions {
