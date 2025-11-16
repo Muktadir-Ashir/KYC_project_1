@@ -44,12 +44,12 @@ const KYCForm: React.FC<KYCFormProps> = ({ onSuccess }) => {
 
     try {
       const response = await submitKYC(formData);
-      
+
       // Set the AI summary from response
       if (response.data.aiSummary) {
         setAiSummary(response.data.aiSummary);
       }
-      
+
       setSuccess(
         "KYC submitted successfully! Your application is under review."
       );
@@ -86,7 +86,8 @@ const KYCForm: React.FC<KYCFormProps> = ({ onSuccess }) => {
         {error && <div className="alert alert-error">{error}</div>}
         {generatingSummary && (
           <div className="alert alert-info">
-            <strong>⏳ Generating AI Summary...</strong> Your submission is being analyzed by AI...
+            <strong>⏳ Generating AI Summary...</strong> Your submission is
+            being analyzed by AI...
           </div>
         )}
         {success && (
@@ -190,8 +191,16 @@ const KYCForm: React.FC<KYCFormProps> = ({ onSuccess }) => {
           </div>
 
           <div className="form-actions">
-            <button type="submit" disabled={loading || generatingSummary} className="submit-btn">
-              {loading ? "Processing..." : generatingSummary ? "⏳ Generating Summary..." : "Submit Application"}
+            <button
+              type="submit"
+              disabled={loading || generatingSummary}
+              className="submit-btn"
+            >
+              {loading
+                ? "Processing..."
+                : generatingSummary
+                ? "⏳ Generating Summary..."
+                : "Submit Application"}
             </button>
           </div>
         </form>
