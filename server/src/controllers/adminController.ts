@@ -67,12 +67,10 @@ export const generatePDF = async (req: Request, res: Response) => {
     }
 
     if (kyc.status !== "approved") {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Only approved KYC can generate PDF",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Only approved KYC can generate PDF",
+      });
     }
 
     // Create PDF document
@@ -137,25 +135,20 @@ export const generatePDF = async (req: Request, res: Response) => {
       doc.font("Helvetica").text(kyc.aiSummary);
     }
 
-    // Add footer
-    doc
-      .moveTo(50, doc.page.height - 100)
-      .lineTo(550, doc.page.height - 100)
-      .stroke();
+    // Add footer with relative positioning
+    doc.moveDown(2);
+    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+    doc.moveDown(0.5);
     doc
       .fontSize(9)
+      .font("Helvetica")
       .text(
         "This document is generated automatically. For verification queries, please contact support.",
-        50,
-        doc.page.height - 80,
         { align: "center" }
       );
-    doc.text(
-      `Generated on: ${new Date().toLocaleString()}`,
-      50,
-      doc.page.height - 60,
-      { align: "center" }
-    );
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, {
+      align: "center",
+    });
 
     // Finalize PDF
     doc.end();
