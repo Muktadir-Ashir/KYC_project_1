@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getAllKYC, KYCData } from "../services/kycService";
+import { getUserKYCList, KYCData } from "../services/kycService";
 import "../styles/KYCList.css";
 
 const KYCList: React.FC = () => {
@@ -14,7 +14,7 @@ const KYCList: React.FC = () => {
   const fetchKYCRecords = async () => {
     try {
       setLoading(true);
-      const response = await getAllKYC();
+      const response = await getUserKYCList();
       setKycRecords(response.data);
       setError("");
     } catch (err: any) {

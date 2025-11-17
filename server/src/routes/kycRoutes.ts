@@ -1,9 +1,16 @@
-import express from 'express';
-import { submitKYC, getKYC } from '../controllers/kycController';
+import express from "express";
+import {
+  getKYC,
+  getUserKYCList,
+  submitKYC,
+} from "../controllers/kycController";
+import { isAuthenticated, verifyToken } from "../middleware/authMiddleware";
 
 const router = express.Router();
 
-router.post('/kyc', submitKYC);
-router.get('/kyc/:id', getKYC);
+// Protected routes - user must be authenticated
+router.post("/kyc", verifyToken, isAuthenticated, submitKYC);
+router.get("/kyc/list/my", verifyToken, isAuthenticated, getUserKYCList); // Must come BEFORE /:id
+router.get("/kyc/:id", verifyToken, isAuthenticated, getKYC);
 
 export default router;

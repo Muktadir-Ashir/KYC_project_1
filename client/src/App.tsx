@@ -1,16 +1,65 @@
-import { useState } from "react";
-import { Link, Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import {
+  Link,
+  Navigate,
+  Route,
+  BrowserRouter as Router,
+  Routes,
+} from "react-router-dom";
 import "./App.css";
 import AdminDashboard from "./components/AdminDashboard";
 import KYCForm from "./components/KYCForm";
 import KYCList from "./components/KYCList";
+import Login from "./components/Login";
+import Register from "./components/Register";
 
 function App() {
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [token, setToken] = useState<string | null>(
+    localStorage.getItem("token")
+  );
+  const [user, setUser] = useState<any>(
+    localStorage.getItem("user")
+      ? JSON.parse(localStorage.getItem("user")!)
+      : null
+  );
 
-  const toggleAdminMode = () => {
-    setIsAdmin(!isAdmin);
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+
+    if (storedToken) {
+      setToken(storedToken);
+      setUser(storedUser ? JSON.parse(storedUser) : null);
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setToken(null);
+    setUser(null);
+    window.location.href = "/login";
   };
+
+  const ProtectedRoute = ({ element }: { element: React.ReactElement }) => {
+    return token ? element : <Navigate to="/login" />;
+  };
+
+  const AdminRoute = ({ element }: { element: React.ReactElement }) => {
+    return token && user?.role === "admin" ? element : <Navigate to="/login" />;
+  };
+
+  if (!token) {
+    return (
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="*" element={<Navigate to="/login" />} />
+        </Routes>
+      </Router>
+    );
+  }
 
   return (
     <Router>
@@ -19,7 +68,7 @@ function App() {
           <div className="nav-container">
             <h1 className="nav-title">🔐 KYC System</h1>
             <ul className="nav-links">
-              {!isAdmin ? (
+              {user?.role === "user" ? (
                 <>
                   <li>
                     <Link to="/">Submit Application</Link>
@@ -36,8 +85,11 @@ function App() {
                 </>
               )}
               <li>
-                <button className="admin-toggle-btn" onClick={toggleAdminMode}>
-                  {isAdmin ? "User Mode" : "Admin Mode"}
+                <span className="user-info">Welcome, {user?.username}</span>
+              </li>
+              <li>
+                <button className="logout-btn" onClick={handleLogout}>
+                  Logout
                 </button>
               </li>
             </ul>
@@ -45,17 +97,33 @@ function App() {
         </nav>
 
         <main className="main-content">
-          {isAdmin ? (
-            <Routes>
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="*" element={<AdminDashboard />} />
-            </Routes>
-          ) : (
-            <Routes>
-              <Route path="/" element={<KYCForm />} />
-              <Route path="/status" element={<KYCList />} />
-            </Routes>
-          )}
+          <Routes>
+            {user?.role === "user" ? (
+              <>
+                <Route
+                  path="/"
+                  element={<ProtectedRoute element={<KYCForm />} />}
+                />
+                <Route
+                  path="/status"
+                  element={<ProtectedRoute element={<KYCList />} />}
+                />
+              </>
+            ) : (
+              <>
+                <Route
+                  path="/admin"
+                  element={<AdminRoute element={<AdminDashboard />} />}
+                />
+              </>
+            )}
+            <Route
+              path="*"
+              element={
+                <Navigate to={user?.role === "admin" ? "/admin" : "/"} />
+              }
+            />
+          </Routes>
         </main>
 
         <footer className="app-footer">

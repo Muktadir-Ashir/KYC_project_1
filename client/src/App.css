@@ -64,6 +64,29 @@
   color: #a0aec0;
 }
 
+.user-info {
+  color: #a0aec0;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.logout-btn {
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+  font-size: 0.95rem;
+}
+
+.logout-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 101, 101, 0.4);
+}
+
 .admin-toggle-btn {
   padding: 0.5rem 1rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

@@ -24,6 +24,12 @@ export const getKYCById = async (id: string) => {
   return response.data;
 };
 
+// Get user's KYC submissions
+export const getUserKYCList = async () => {
+  const response = await api.get("/kyc/list/my");
+  return response.data;
+};
+
 // Admin endpoints
 export const getAllKYC = async () => {
   const response = await api.get("/admin/kyc");
