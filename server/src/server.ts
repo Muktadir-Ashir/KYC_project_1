@@ -22,7 +22,7 @@ const createDefaultAdmin = async () => {
   try {
     // Always recreate admin for consistency (development only)
     await User.deleteOne({ username: "admin" });
-    
+
     const hashedPassword = await bcrypt.hash("admin123", 10);
     const defaultAdmin = new User({
       username: "admin",
@@ -31,9 +31,7 @@ const createDefaultAdmin = async () => {
       role: "admin",
     });
     await defaultAdmin.save();
-    console.log(
-      "✅ Default admin created: username=admin, password=admin123"
-    );
+    console.log("✅ Default admin created: username=admin, password=admin123");
   } catch (error) {
     console.error("Error creating default admin:", error);
   }
