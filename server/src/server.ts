@@ -7,6 +7,8 @@ import User from "./models/User";
 import adminRoutes from "./routes/adminRoutes";
 import authRoutes from "./routes/authRoutes";
 import kycRoutes from "./routes/kycRoutes";
+import { startPDFWorker } from "./services/pdfWorker";
+import { connectRabbitMQ } from "./services/rabbitmqService";
 
 dotenv.config();
 
@@ -37,10 +39,19 @@ const createDefaultAdmin = async () => {
   }
 };
 
-// Connect to MongoDB and create default admin
+// Initialize services
 (async () => {
   await connectDB();
   await createDefaultAdmin();
+
+  // Initialize RabbitMQ
+  try {
+    await connectRabbitMQ();
+    await startPDFWorker();
+    console.log("✅ PDF Worker initialized");
+  } catch (error) {
+    console.warn("⚠️ RabbitMQ not available - PDF generation will be skipped");
+  }
 })();
 
 // Routes

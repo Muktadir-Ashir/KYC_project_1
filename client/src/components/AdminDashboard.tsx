@@ -91,8 +91,13 @@ const AdminDashboard: React.FC = () => {
       setProcessingId(id);
       const pdfBlob = await generateKYCPDF(id);
       downloadPDF(pdfBlob, `KYC_${fullName}_${new Date().getTime()}.pdf`);
+      setError("");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Error generating PDF");
+      setError(
+        err?.message ||
+          err.response?.data?.message ||
+          "Error generating PDF. Please try again."
+      );
     } finally {
       setProcessingId(null);
     }

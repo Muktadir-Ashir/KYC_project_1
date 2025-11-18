@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
-import PDFDocument from "pdfkit";
+import fs from "fs";
 import KYC from "../models/KYC";
+import { publishPDFJob } from "../services/rabbitmqService";
 
 // Get all KYC applications
 export const getAllKYC = async (req: Request, res: Response) => {
@@ -57,7 +58,7 @@ export const updateKYCStatus = async (req: Request, res: Response) => {
   }
 };
 
-// Generate PDF for approved KYC
+// Generate PDF for approved KYC (queued via RabbitMQ)
 export const generatePDF = async (req: Request, res: Response) => {
   try {
     const kyc = await KYC.findById(req.params.id);
@@ -73,85 +74,32 @@ export const generatePDF = async (req: Request, res: Response) => {
       });
     }
 
-    // Create PDF document
-    const doc = new PDFDocument();
-    const filename = `KYC_${kyc._id}_${Date.now()}.pdf`;
-
-    // Set response headers
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-
-    // Pipe document to response
-    doc.pipe(res);
-
-    // Add header
-    doc
-      .fontSize(20)
-      .font("Helvetica-Bold")
-      .text("KYC Verification Document", { align: "center" });
-    doc.moveDown(0.5);
-    doc
-      .fontSize(12)
-      .font("Helvetica")
-      .text("Know Your Customer Information", { align: "center" });
-    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
-    doc.moveDown(1);
-
-    // Add content
-    doc
-      .fontSize(11)
-      .font("Helvetica-Bold")
-      .text("Personal Information:", { underline: true });
-    doc.moveDown(0.3);
-    doc.font("Helvetica");
-    doc.text(`Full Name: ${kyc.fullName}`);
-    doc.text(`Email: ${kyc.email}`);
-    doc.text(`Phone: ${kyc.phone}`);
-    doc.text(`Address: ${kyc.address}`);
-    doc.text(`ID Number: ${kyc.idNumber}`);
-    doc.text(
-      `Date of Birth: ${new Date(kyc.dateOfBirth).toLocaleDateString()}`
-    );
-
-    doc.moveDown(0.5);
-    doc
-      .fontSize(11)
-      .font("Helvetica-Bold")
-      .text("Verification Details:", { underline: true });
-    doc.moveDown(0.3);
-    doc.font("Helvetica");
-    // Use fillColor to set text color in PDFKit (TextOptions doesn't accept a 'color' property)
-    doc.fillColor("#008000").text(`Status: APPROVED`);
-    doc.text(`Verification Date: ${new Date().toLocaleDateString()}`);
-    doc.text(`Document ID: ${kyc._id}`);
-
-    if (kyc.aiSummary) {
-      doc.moveDown(0.5);
-      doc
-        .fontSize(11)
-        .font("Helvetica-Bold")
-        .text("AI Summary:", { underline: true });
-      doc.moveDown(0.3);
-      doc.font("Helvetica").text(kyc.aiSummary);
+    // Check if PDF already exists
+    if (kyc.pdfPath && fs.existsSync(kyc.pdfPath)) {
+      console.log(`📥 Serving existing PDF: ${kyc.pdfPath}`);
+      return res.download(kyc.pdfPath);
     }
 
-    // Add footer with relative positioning
-    doc.moveDown(2);
-    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
-    doc.moveDown(0.5);
-    doc
-      .fontSize(9)
-      .font("Helvetica")
-      .text(
-        "This document is generated automatically. For verification queries, please contact support.",
-        { align: "center" }
-      );
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, {
-      align: "center",
+    // Publish job to RabbitMQ queue
+    const published = await publishPDFJob({
+      kycId: (kyc._id as any).toString(),
+      userId: (kyc.userId as any).toString(),
+      fullName: kyc.fullName,
+      email: kyc.email,
     });
 
-    // Finalize PDF
-    doc.end();
+    if (published) {
+      return res.status(202).json({
+        success: true,
+        message: "PDF generation queued. Your PDF will be ready shortly.",
+        status: "queued",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to queue PDF generation",
+    });
   } catch (error) {
     console.error("Error generating PDF:", error);
     res.status(500).json({ success: false, message: "Error generating PDF" });

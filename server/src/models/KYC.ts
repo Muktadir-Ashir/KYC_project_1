@@ -10,6 +10,8 @@ export interface IKYC extends Document {
   dateOfBirth: Date;
   aiSummary?: string;
   status: "pending" | "approved" | "rejected";
+  pdfPath?: string;
+  pdfGeneratedAt?: Date;
   submittedAt: Date;
 }
 
@@ -27,6 +29,8 @@ const kycSchema = new Schema<IKYC>({
     enum: ["pending", "approved", "rejected"],
     default: "pending",
   },
+  pdfPath: { type: String },
+  pdfGeneratedAt: { type: Date },
   submittedAt: { type: Date, default: Date.now },
 });
 
