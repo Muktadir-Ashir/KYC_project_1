@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import PDFDocument from "pdfkit";
-import KYC from "../models/KYC";
+import KYC, { IKYC } from "../models/KYC";
 import { getChannel } from "./rabbitmqService";
 
 const PDF_QUEUE = "pdf_generation_queue";
@@ -29,8 +29,16 @@ export const startPDFWorker = async () => {
             const jobData = JSON.parse(msg.content.toString());
             console.log(`📥 Processing PDF for KYC: ${jobData.kycId}`);
 
+            const kycRecord = await KYC.findById(jobData.kycId);
+
+            if (!kycRecord) {
+              console.warn(`⚠️ KYC record not found for job: ${jobData.kycId}`);
+              channel.ack(msg);
+              return;
+            }
+
             // Generate PDF
-            const pdfPath = await generatePDF(jobData);
+            const pdfPath = await generatePDF(kycRecord);
 
             // Update KYC with PDF path
             await KYC.findByIdAndUpdate(jobData.kycId, {
@@ -57,15 +65,10 @@ export const startPDFWorker = async () => {
   }
 };
 
-const generatePDF = async (jobData: {
-  kycId: string;
-  userId: string;
-  fullName: string;
-  email: string;
-}): Promise<string> => {
+const generatePDF = async (kyc: IKYC): Promise<string> => {
   return new Promise((resolve, reject) => {
     try {
-      const fileName = `KYC_${jobData.kycId}_${Date.now()}.pdf`;
+      const fileName = `KYC_${kyc._id}_${Date.now()}.pdf`;
       const filePath = path.join(PDF_OUTPUT_DIR, fileName);
 
       const doc = new PDFDocument();
@@ -93,10 +96,25 @@ const generatePDF = async (jobData: {
         .text("Personal Information:", { underline: true });
       doc.moveDown(0.3);
       doc.font("Helvetica");
-      doc.text(`Full Name: ${jobData.fullName}`);
-      doc.text(`Email: ${jobData.email}`);
-      doc.text(`Status: APPROVED`);
-      doc.text(`Document ID: ${jobData.kycId}`);
+      doc.text(`Full Name: ${kyc.fullName}`);
+      doc.text(`Email: ${kyc.email}`);
+      doc.text(`Status: ${kyc.status?.toUpperCase() || "APPROVED"}`);
+      doc.text(`Document ID: ${kyc._id}`);
+
+      if (kyc.aiSummary) {
+        doc.moveDown(0.5);
+        doc
+          .fontSize(11)
+          .font("Helvetica-Bold")
+          .text("AI-Generated Summary:", { underline: true });
+        doc.moveDown(0.3);
+        doc
+          .font("Helvetica")
+          .fontSize(10)
+          .text(kyc.aiSummary, {
+            align: "left",
+          });
+      }
 
       doc.moveDown(0.5);
       doc

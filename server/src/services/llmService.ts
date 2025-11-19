@@ -15,7 +15,7 @@ export const generateAISummary = async (
       console.warn(
         "Hugging Face API key not configured, using placeholder summary"
       );
-      return `KYC submission for ${kycData.fullName} received and pending verification.`;
+      return buildFallbackSummary(kycData);
     }
 
     // Construct the prompt for the LLM
@@ -46,7 +46,7 @@ Summary:`;
 
     if (!response.ok) {
       console.error("Hugging Face API error:", response.statusText);
-      return `KYC submission for ${kycData.fullName} received and pending verification.`;
+      return buildFallbackSummary(kycData);
     }
 
     const result = await response.json();
@@ -68,10 +68,23 @@ Summary:`;
     }
 
     console.error("Unexpected Hugging Face response format:", result);
-    return `KYC submission for ${kycData.fullName} received and pending verification.`;
+    return buildFallbackSummary(kycData);
   } catch (error) {
     console.error("Error generating AI summary:", error);
     // Return a fallback summary if the API call fails
-    return `KYC submission for ${kycData.fullName} received and pending verification.`;
+    return buildFallbackSummary(kycData);
   }
+};
+
+const buildFallbackSummary = (kycData: Partial<IKYC>) => {
+  const name = kycData.fullName || "Applicant";
+  const email = kycData.email ? `email ${kycData.email}` : "email provided";
+  const phone = kycData.phone ? `phone ${kycData.phone}` : "phone provided";
+  const idNumber = kycData.idNumber
+    ? `ID ${kycData.idNumber}`
+    : "identification provided";
+  const dob = kycData.dateOfBirth
+    ? `DOB ${new Date(kycData.dateOfBirth).toLocaleDateString()}`
+    : "date of birth captured";
+  return `${name} submitted KYC details including ${idNumber}, ${dob}, ${email}, and ${phone}. Submission awaiting verification.`;
 };
