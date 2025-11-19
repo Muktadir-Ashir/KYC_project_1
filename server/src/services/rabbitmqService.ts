@@ -1,4 +1,5 @@
 import amqp from "amqplib";
+import { logger } from "../utils/logger";
 
 let connection: any = null;
 let channel: any = null;
@@ -14,12 +15,12 @@ export const connectRabbitMQ = async () => {
     // Declare queue (creates if doesn't exist)
     await channel.assertQueue(PDF_QUEUE, { durable: true });
 
-    console.log("✅ Connected to RabbitMQ");
-    console.log(`✅ Queue "${PDF_QUEUE}" ready`);
+    logger.info("Connected to RabbitMQ");
+    logger.info(`Queue "${PDF_QUEUE}" ready`);
 
     return channel;
   } catch (error) {
-    console.error("❌ RabbitMQ Connection Error:", error);
+    logger.error("RabbitMQ Connection Error", error);
     throw error;
   }
 };
@@ -45,10 +46,10 @@ export const publishPDFJob = async (jobData: {
       persistent: true,
     });
 
-    console.log(`📤 PDF Job published for KYC: ${jobData.kycId}`);
+    logger.info(`PDF Job published for KYC: ${jobData.kycId}`);
     return true;
   } catch (error) {
-    console.error("Error publishing PDF job:", error);
+    logger.error("Error publishing PDF job", error);
     return false;
   }
 };
@@ -57,8 +58,8 @@ export const closeRabbitMQ = async () => {
   try {
     if (channel) await channel.close();
     if (connection) await connection.close();
-    console.log("✅ RabbitMQ connection closed");
+    logger.info("RabbitMQ connection closed");
   } catch (error) {
-    console.error("Error closing RabbitMQ:", error);
+    logger.error("Error closing RabbitMQ", error);
   }
 };

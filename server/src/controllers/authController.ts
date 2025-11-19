@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/User";
+import { logger } from "../utils/logger";
 
 const JWT_SECRET =
   process.env.JWT_SECRET || "your_jwt_secret_key_change_in_env";
@@ -52,7 +53,7 @@ export const register = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Error registering user:", error);
+    logger.error("Error registering user", error);
     res.status(500).json({ success: false, message: "Error registering user" });
   }
 };
@@ -62,7 +63,7 @@ export const login = async (req: Request, res: Response) => {
   try {
     const { username, password } = req.body;
 
-    console.log(`🔍 Login attempt: username=${username}`);
+    logger.info(`Login attempt: username=${username}`);
 
     // Validate input
     if (!username || !password) {
@@ -76,25 +77,25 @@ export const login = async (req: Request, res: Response) => {
     const user = await User.findOne({ username });
 
     if (!user) {
-      console.log(`❌ User not found: ${username}`);
+      logger.warn(`User not found: ${username}`);
       return res
         .status(401)
         .json({ success: false, message: "Invalid username or password" });
     }
 
-    console.log(`✅ User found: ${username}, role: ${user.role}`);
+    logger.info(`User found: ${username}, role: ${user.role}`);
 
     // Compare passwords
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      console.log(`❌ Password invalid for user: ${username}`);
+      logger.warn(`Password invalid for user: ${username}`);
       return res
         .status(401)
         .json({ success: false, message: "Invalid username or password" });
     }
 
-    console.log(`✅ Password valid, generating token for: ${username}`);
+    logger.info(`Password valid, generating token for: ${username}`);
 
     // Generate JWT token (expires in 24 hours)
     const token = jwt.sign(
@@ -121,7 +122,7 @@ export const login = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Error logging in:", error);
+    logger.error("Error logging in", error);
     res.status(500).json({ success: false, message: "Error logging in" });
   }
 };
@@ -144,7 +145,7 @@ export const getCurrentUser = async (req: Request, res: Response) => {
       data: user,
     });
   } catch (error) {
-    console.error("Error fetching user:", error);
+    logger.error("Error fetching current user", error);
     res
       .status(500)
       .json({ success: false, message: "Error fetching user info" });

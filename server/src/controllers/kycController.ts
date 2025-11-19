@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import KYC from "../models/KYC";
 import { generateAISummary } from "../services/llmService";
+import { logger } from "../utils/logger";
 
 // Submit KYC application
 export const submitKYC = async (req: Request, res: Response) => {
@@ -22,14 +23,11 @@ export const submitKYC = async (req: Request, res: Response) => {
 
     // Generate AI summary before saving
     try {
-      console.log("Generating AI summary for KYC submission...");
+      logger.info("Generating AI summary for KYC submission...");
       const aiSummary = await generateAISummary(kycData);
       kycData.aiSummary = aiSummary;
     } catch (aiError) {
-      console.error(
-        "AI summary generation failed, continuing without it:",
-        aiError
-      );
+      logger.error("AI summary generation failed, continuing without it", aiError);
       kycData.aiSummary = `KYC submission for ${kycData.fullName} received and pending verification.`;
     }
 
@@ -40,7 +38,7 @@ export const submitKYC = async (req: Request, res: Response) => {
       data: kycData,
     });
   } catch (error) {
-    console.error("Error submitting KYC:", error);
+    logger.error("Error submitting KYC", error);
     res.status(500).json({ success: false, message: "Error submitting KYC" });
   }
 };
@@ -66,7 +64,7 @@ export const getKYC = async (req: Request, res: Response) => {
 
     res.json({ success: true, data: kyc });
   } catch (error) {
-    console.error("Error fetching KYC:", error);
+    logger.error("Error fetching KYC", error);
     res.status(500).json({ success: false, message: "Error fetching KYC" });
   }
 };
@@ -80,7 +78,7 @@ export const getUserKYCList = async (req: Request, res: Response) => {
 
     res.json({ success: true, data: kycs });
   } catch (error) {
-    console.error("Error fetching user KYC list:", error);
+    logger.error("Error fetching user KYC list", error);
     res
       .status(500)
       .json({ success: false, message: "Error fetching KYC list" });

@@ -3,6 +3,7 @@ import path from "path";
 import PDFDocument from "pdfkit";
 import KYC, { IKYC } from "../models/KYC";
 import { getChannel } from "./rabbitmqService";
+import { logger } from "../utils/logger";
 
 const PDF_QUEUE = "pdf_generation_queue";
 const PDF_OUTPUT_DIR = path.join(__dirname, "../../pdfs");
@@ -19,7 +20,7 @@ export const startPDFWorker = async () => {
     // Set prefetch to 1 (process one job at a time)
     await channel.prefetch(1);
 
-    console.log("🔄 PDF Worker started...");
+    logger.info("PDF Worker started...");
 
     channel.consume(
       PDF_QUEUE,
@@ -27,12 +28,12 @@ export const startPDFWorker = async () => {
         if (msg) {
           try {
             const jobData = JSON.parse(msg.content.toString());
-            console.log(`📥 Processing PDF for KYC: ${jobData.kycId}`);
+            logger.info(`Processing PDF for KYC: ${jobData.kycId}`);
 
             const kycRecord = await KYC.findById(jobData.kycId);
 
             if (!kycRecord) {
-              console.warn(`⚠️ KYC record not found for job: ${jobData.kycId}`);
+              logger.warn(`KYC record not found for job: ${jobData.kycId}`);
               channel.ack(msg);
               return;
             }
@@ -46,12 +47,12 @@ export const startPDFWorker = async () => {
               pdfGeneratedAt: new Date(),
             });
 
-            console.log(`✅ PDF generated: ${pdfPath}`);
+            logger.info(`PDF generated: ${pdfPath}`);
 
             // Acknowledge the message
             channel.ack(msg);
           } catch (error) {
-            console.error("❌ Error processing PDF job:", error);
+            logger.error("Error processing PDF job", error);
             // Negative acknowledge and requeue
             channel.nack(msg, false, true);
           }
@@ -60,7 +61,7 @@ export const startPDFWorker = async () => {
       { noAck: false }
     );
   } catch (error) {
-    console.error("❌ Error starting PDF Worker:", error);
+    logger.error("Error starting PDF Worker", error);
     throw error;
   }
 };

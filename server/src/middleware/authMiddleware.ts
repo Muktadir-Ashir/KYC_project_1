@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import { logger } from "../utils/logger";
 
 const JWT_SECRET =
   process.env.JWT_SECRET || "your_jwt_secret_key_change_in_env";
@@ -42,7 +43,7 @@ export const verifyToken = (
 
     next();
   } catch (error) {
-    console.error("Token verification failed:", error);
+    logger.warn("Token verification failed", error);
     res
       .status(401)
       .json({ success: false, message: "Invalid or expired token" });

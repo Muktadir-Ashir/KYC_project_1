@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import fs from "fs";
 import KYC from "../models/KYC";
 import { publishPDFJob } from "../services/rabbitmqService";
+import { logger } from "../utils/logger";
 
 // Get all KYC applications
 export const getAllKYC = async (req: Request, res: Response) => {
@@ -9,7 +10,7 @@ export const getAllKYC = async (req: Request, res: Response) => {
     const kycList = await KYC.find().sort({ submittedAt: -1 });
     res.json({ success: true, data: kycList });
   } catch (error) {
-    console.error("Error fetching KYC list:", error);
+    logger.error("Error fetching KYC list", error);
     res
       .status(500)
       .json({ success: false, message: "Error fetching KYC list" });
@@ -25,7 +26,7 @@ export const getKYCById = async (req: Request, res: Response) => {
     }
     res.json({ success: true, data: kyc });
   } catch (error) {
-    console.error("Error fetching KYC:", error);
+    logger.error("Error fetching KYC", error);
     res.status(500).json({ success: false, message: "Error fetching KYC" });
   }
 };
@@ -53,7 +54,7 @@ export const updateKYCStatus = async (req: Request, res: Response) => {
 
     res.json({ success: true, message: `KYC ${status}`, data: kyc });
   } catch (error) {
-    console.error("Error updating KYC:", error);
+    logger.error("Error updating KYC", error);
     res.status(500).json({ success: false, message: "Error updating KYC" });
   }
 };
@@ -76,7 +77,7 @@ export const generatePDF = async (req: Request, res: Response) => {
 
     // Check if PDF already exists
     if (kyc.pdfPath && fs.existsSync(kyc.pdfPath)) {
-      console.log(`📥 Serving existing PDF: ${kyc.pdfPath}`);
+      logger.info(`Serving existing PDF: ${kyc.pdfPath}`);
       return res.download(kyc.pdfPath);
     }
 
@@ -101,7 +102,7 @@ export const generatePDF = async (req: Request, res: Response) => {
       message: "Failed to queue PDF generation",
     });
   } catch (error) {
-    console.error("Error generating PDF:", error);
+    logger.error("Error generating PDF", error);
     res.status(500).json({ success: false, message: "Error generating PDF" });
   }
 };

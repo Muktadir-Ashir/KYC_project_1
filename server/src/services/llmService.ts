@@ -1,4 +1,5 @@
 import { IKYC } from "../models/KYC";
+import { logger } from "../utils/logger";
 
 /**
  * Generates an AI summary from KYC data using Hugging Face API
@@ -12,9 +13,7 @@ export const generateAISummary = async (
     const apiKey = process.env.HUGGING_FACE_API_KEY;
 
     if (!apiKey) {
-      console.warn(
-        "Hugging Face API key not configured, using placeholder summary"
-      );
+      logger.warn("Hugging Face API key not configured, using placeholder summary");
       return buildFallbackSummary(kycData);
     }
 
@@ -45,7 +44,7 @@ Summary:`;
     );
 
     if (!response.ok) {
-      console.error("Hugging Face API error:", response.statusText);
+      logger.error("Hugging Face API error", response.statusText);
       return buildFallbackSummary(kycData);
     }
 
@@ -67,10 +66,10 @@ Summary:`;
       return generatedText.substring(0, 300).trim();
     }
 
-    console.error("Unexpected Hugging Face response format:", result);
+    logger.error("Unexpected Hugging Face response format", result);
     return buildFallbackSummary(kycData);
   } catch (error) {
-    console.error("Error generating AI summary:", error);
+    logger.error("Error generating AI summary", error);
     // Return a fallback summary if the API call fails
     return buildFallbackSummary(kycData);
   }

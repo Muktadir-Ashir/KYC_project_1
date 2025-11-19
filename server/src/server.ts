@@ -1,23 +1,15 @@
 import bcrypt from "bcryptjs";
-import cors from "cors";
 import dotenv from "dotenv";
-import express from "express";
+import app from "./app";
 import { connectDB } from "./config/database";
 import User from "./models/User";
-import adminRoutes from "./routes/adminRoutes";
-import authRoutes from "./routes/authRoutes";
-import kycRoutes from "./routes/kycRoutes";
 import { startPDFWorker } from "./services/pdfWorker";
 import { connectRabbitMQ } from "./services/rabbitmqService";
+import { logger } from "./utils/logger";
 
 dotenv.config();
 
-const app = express();
 const PORT = process.env.PORT || 5000;
-
-// Middleware
-app.use(cors());
-app.use(express.json());
 
 // Create default admin if doesn't exist
 const createDefaultAdmin = async () => {
@@ -33,9 +25,9 @@ const createDefaultAdmin = async () => {
       role: "admin",
     });
     await defaultAdmin.save();
-    console.log("✅ Default admin created: username=admin, password=admin123");
+    logger.info("Default admin created: username=admin, password=admin123");
   } catch (error) {
-    console.error("Error creating default admin:", error);
+    logger.error("Error creating default admin", error);
   }
 };
 
@@ -48,22 +40,12 @@ const createDefaultAdmin = async () => {
   try {
     await connectRabbitMQ();
     await startPDFWorker();
-    console.log("✅ PDF Worker initialized");
+    logger.info("PDF Worker initialized");
   } catch (error) {
-    console.warn("⚠️ RabbitMQ not available - PDF generation will be skipped");
+    logger.warn("RabbitMQ not available - PDF generation will be skipped", error);
   }
 })();
 
-// Routes
-app.use("/api", authRoutes);
-app.use("/api", kycRoutes);
-app.use("/api", adminRoutes);
-
-// Test route
-app.get("/", (req, res) => {
-  res.json({ message: "KYC API is running" });
-});
-
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  logger.info(`Server running on port ${PORT}`);
 });
