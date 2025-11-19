@@ -30,3 +30,7 @@ coverage/
 
 # Dependencies
 package-lock.json
+
+
+server/.env
+client/.env
